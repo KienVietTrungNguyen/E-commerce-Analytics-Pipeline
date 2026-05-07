@@ -348,19 +348,19 @@ Cart Abandonment Rate   │  Avg Customer LTV          │  Session Conversion R
 ```
 <img width="1266" height="711" alt="image" src="https://github.com/user-attachments/assets/0561a168-b6df-420b-88b9-7ced65b9cbee" />
 
-# Key Metrics
+### Key Metrics
 - Total Customers: 200M+
 - Conversion Rate: ~100%
 - Cart Abandonment Rate: ~1%
 - Avg Customer LTV: 129M VND
 - Session Conversion Rate: ~50%
-# Insights
+### Insights
 - Conversion rate ~100% → indicates data quality issue (likely duplicate or incorrect joins)
 - Cart abandonment extremely low (~1%) → unrealistic → tracking issue
 - Channel distribution is evenly split (~20% each) → attribution model may be inaccurate
 - Time to purchase decreased significantly → faster conversion or compressed data
 - Customer segmentation shows many low-frequency users
-# Recommendations
+### Recommendations
 - Fix event tracking & deduplication logic
 - Implement session-based funnel tracking
 - Use multi-touch attribution instead of linear
@@ -388,18 +388,18 @@ Payment Collection Rate  │  Avg Collection Period  │  Net Cashflow
 ```
 <img width="1257" height="708" alt="image" src="https://github.com/user-attachments/assets/ca6b072e-5ec4-4d65-9556-a07c1dd97e8b" />
 
-# Key Metrics
+### Key Metrics
 - Total Revenue: ~57T VND
 - Outstanding Receivables: ~80T VND
 - Payment Collection Rate: 0%
 - Shopify Contribution: 83.7%
-# Insights
+### Insights
 - Revenue generated but no payment collected
 - Extremely high receivables → serious financial risk
 - Cashflow fluctuates heavily
 - Business heavily depends on Shopify (~84%)
 - Bank balance unstable → liquidity risk
-# Recommendations
+### Recommendations
 - Implement payment reconciliation system
 - Monitor receivables & payment delays
 - Diversify sales channels
