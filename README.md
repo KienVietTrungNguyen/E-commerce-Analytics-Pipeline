@@ -6,15 +6,13 @@
 
 - [Overview](#-overview)
 - [Architecture](#-architecture)
+- [ETL Pipeline](#-etl-pipeline)
 - [Data Sources](#-data-sources)
 - [BigQuery Schema](#-bigquery-schema)
-- [ETL Pipeline](#-etl-pipeline)
 - [Power BI Dashboards](#-power-bi-dashboards)
 - [Project Structure](#-project-structure)
 - [Setup & Installation](#-setup--installation)
-- [Data Quality Checks](#-data-quality-checks)
-- [Sample Queries](#-sample-queries)
-- [Deliverables](#-deliverables)
+
 
 ---
 
