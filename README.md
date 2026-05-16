@@ -77,6 +77,79 @@ Pipeline xử lý và phân tích dữ liệu toàn diện cho hệ thống bán
 
 ---
 
+### Pipeline Flow
+
+```
+Step 1: Extract
+  └── BaseExtractor.list_files(bucket, prefix)
+  └── BaseExtractor.extract_json_gz(file_path)
+  └── Decompress + parse JSON → DataFrame
+
+Step 2: Transform
+  ├── DimensionTransformer
+  │   ├── Standardize column names & data types
+  │   ├── Generate surrogate keys (customer_id, product_id...)
+  │   ├── Deduplicate records
+  │   └── Handle missing values
+  └── FactTransformer
+      ├── Generate order_key, payment_key, event_key (UUID/hash)
+      ├── Map transaction_id across sources
+      ├── Unify payment status codes (resultCode=0 → success)
+      └── Calculate derived fields (line_total = qty × unit_price)
+
+Step 3: Load
+  └── BigQueryLoader.create_dataset_if_not_exists()
+  └── BigQueryLoader.load_dataframe(df, table, write_disposition)
+      ├── Dims: WRITE_TRUNCATE
+      └── Facts: WRITE_APPEND (incremental)
+
+Step 4: Orchestrate
+  └── PipelineOrchestrator
+      ├── 1. Load all dimension tables
+      ├── 2. Load all fact tables
+      ├── 3. Update dim_customer aggregates (LTV, total_orders)
+      ├── 4. Create/refresh analysis views
+      └── 5. Log pipeline run metadata
+```
+
+## ⚙️ ETL Pipeline
+
+### Project Structure
+
+```
+etl_pipeline/
+├── config/
+│   ├── gcs_config.yaml          # GCS bucket paths & credentials
+│   └── bigquery_schema.yaml     # Table schemas & partition config
+├── extractors/
+│   ├── __init__.py
+│   ├── base_extractor.py        # BaseExtractor: extract_json_gz(), list_files()
+│   ├── shopify_extractor.py     # Shopify orders, customers, products
+│   ├── sapo_extractor.py        # Sapo POS orders, locations
+│   ├── payment_extractor.py     # PayPal, MoMo, ZaloPay, Mercury
+│   └── tracking_extractor.py   # Cart events
+├── transformers/
+│   ├── __init__.py
+│   ├── base_transformer.py      # Standardize columns, data types, keys
+│   ├── dimension_transformer.py # dim_customer, dim_product, dim_date...
+│   └── fact_transformer.py      # fact_orders, fact_payment, fact_cart_events...
+├── loaders/
+│   ├── __init__.py
+│   └── bigquery_loader.py       # create_dataset(), load_dataframe(), execute_query()
+├── utils/
+│   ├── __init__.py
+│   ├── gcs_helper.py            # GCS read/write helpers
+│   └── logger.py                # Logging config
+├── orchestration/
+│   ├── __init__.py
+│   └── pipeline_orchestrator.py # Load dims first → facts → views → aggregates
+├── tests/
+│   └── test_pipeline.py         # Unit tests (coverage > 80%)
+├── main.py                      # Entry point
+└── requirements.txt
+```
+
+
 ## 📊 Data Sources
 
 ### 1. E-commerce Platforms
@@ -184,77 +257,6 @@ fact_bank_transactions → transaction_key (PK), account_id, transaction_type,
 
 ---
 
-## ⚙️ ETL Pipeline
-
-### Project Structure
-
-```
-etl_pipeline/
-├── config/
-│   ├── gcs_config.yaml          # GCS bucket paths & credentials
-│   └── bigquery_schema.yaml     # Table schemas & partition config
-├── extractors/
-│   ├── __init__.py
-│   ├── base_extractor.py        # BaseExtractor: extract_json_gz(), list_files()
-│   ├── shopify_extractor.py     # Shopify orders, customers, products
-│   ├── sapo_extractor.py        # Sapo POS orders, locations
-│   ├── payment_extractor.py     # PayPal, MoMo, ZaloPay, Mercury
-│   └── tracking_extractor.py   # Cart events
-├── transformers/
-│   ├── __init__.py
-│   ├── base_transformer.py      # Standardize columns, data types, keys
-│   ├── dimension_transformer.py # dim_customer, dim_product, dim_date...
-│   └── fact_transformer.py      # fact_orders, fact_payment, fact_cart_events...
-├── loaders/
-│   ├── __init__.py
-│   └── bigquery_loader.py       # create_dataset(), load_dataframe(), execute_query()
-├── utils/
-│   ├── __init__.py
-│   ├── gcs_helper.py            # GCS read/write helpers
-│   └── logger.py                # Logging config
-├── orchestration/
-│   ├── __init__.py
-│   └── pipeline_orchestrator.py # Load dims first → facts → views → aggregates
-├── tests/
-│   └── test_pipeline.py         # Unit tests (coverage > 80%)
-├── main.py                      # Entry point
-└── requirements.txt
-```
-
-### Pipeline Flow
-
-```
-Step 1: Extract
-  └── BaseExtractor.list_files(bucket, prefix)
-  └── BaseExtractor.extract_json_gz(file_path)
-  └── Decompress + parse JSON → DataFrame
-
-Step 2: Transform
-  ├── DimensionTransformer
-  │   ├── Standardize column names & data types
-  │   ├── Generate surrogate keys (customer_id, product_id...)
-  │   ├── Deduplicate records
-  │   └── Handle missing values
-  └── FactTransformer
-      ├── Generate order_key, payment_key, event_key (UUID/hash)
-      ├── Map transaction_id across sources
-      ├── Unify payment status codes (resultCode=0 → success)
-      └── Calculate derived fields (line_total = qty × unit_price)
-
-Step 3: Load
-  └── BigQueryLoader.create_dataset_if_not_exists()
-  └── BigQueryLoader.load_dataframe(df, table, write_disposition)
-      ├── Dims: WRITE_TRUNCATE
-      └── Facts: WRITE_APPEND (incremental)
-
-Step 4: Orchestrate
-  └── PipelineOrchestrator
-      ├── 1. Load all dimension tables
-      ├── 2. Load all fact tables
-      ├── 3. Update dim_customer aggregates (LTV, total_orders)
-      ├── 4. Create/refresh analysis views
-      └── 5. Log pipeline run metadata
-```
 
 ### Installation
 
@@ -329,31 +331,9 @@ pytest tests/ --cov=. --cov-report=html
 
 ### Dashboard 1 — Customer Journey Analytics
 
-
-**Visuals & DAX:**
-
-| Visual | Type | Key DAX |
-|--------|------|---------|
-| Customer Journey Flow | Sankey (AppSource) | No DAX — fields: `traffic_source` → `next_traffic_source` |
-| Conversion Funnel | Funnel | `Conversion Rate = DIVIDE([Purchase count], [View count], 0)` |
-| Time to Purchase | Line chart | `Avg Time to Purchase = AVERAGEX(SUMMARIZE(...), [_d])` |
-| Channel Attribution | Stacked bar + Bookmarks | `First/Last/Linear touch revenue` |
-| Cart Abandonment | Bar + Matrix heatmap | `Cart Abandonment Rate`, `Stage Drop-off Rate` |
-| RFM Scatter | Bubble chart | `[Recency days]`, `[Frequency]`, `[Customer LTV]` |
-
-**Scorecard KPIs:**
-```
-Total Unique Customers  │  Overall Conversion Rate  │  Avg Time to First Purchase
-Cart Abandonment Rate   │  Avg Customer LTV          │  Session Conversion Rate
 ```
 <img width="1266" height="711" alt="image" src="https://github.com/user-attachments/assets/0561a168-b6df-420b-88b9-7ced65b9cbee" />
 
-### Key Metrics
-- Total Customers: 200M+
-- Conversion Rate: ~100%
-- Cart Abandonment Rate: ~1%
-- Avg Customer LTV: 129M VND
-- Session Conversion Rate: ~50%
 ### Insights
 - Conversion rate ~100% → indicates data quality issue (likely duplicate or incorrect joins)
 - Cart abandonment extremely low (~1%) → unrealistic → tracking issue
@@ -370,29 +350,9 @@ Cart Abandonment Rate   │  Avg Customer LTV          │  Session Conversion R
 
 ### Dashboard 2 — Cashflow & Financial Analytics
 
-**Visuals & DAX:**
-
-| Visual | Type | Key DAX |
-|--------|------|---------|
-| Daily Cashflow | Waterfall | `[Total Revenue]`, `[Net Cashflow]`, `[Bank Outflow]` |
-| Cashflow Trend | Line + Forecast | `Revenue 7d MA`, Analytics pane → Forecast 30d |
-| Revenue Breakdown | Donut ×3 | By channel / payment method / segment |
-| KPI Cards | Card ×4 | `Revenue MTD`, `Revenue YTD`, `Outstanding Receivables`, `Avg Collection Period` |
-| Gateway Performance | Matrix table | `[Payment Volume M]`, `[Channel Success Rate]` |
-| Bank Balance | Line cumulative | `Cash Balance Cumulative` |
-
-**Scorecard KPIs:**
-```
-Revenue MTD  │  Revenue YTD  │  Outstanding Receivables
-Payment Collection Rate  │  Avg Collection Period  │  Net Cashflow
 ```
 <img width="1257" height="708" alt="image" src="https://github.com/user-attachments/assets/ca6b072e-5ec4-4d65-9556-a07c1dd97e8b" />
 
-### Key Metrics
-- Total Revenue: ~57T VND
-- Outstanding Receivables: ~80T VND
-- Payment Collection Rate: 0%
-- Shopify Contribution: 83.7%
 ### Insights
 - Revenue generated but no payment collected
 - Extremely high receivables → serious financial risk
@@ -406,26 +366,6 @@ Payment Collection Rate  │  Avg Collection Period  │  Net Cashflow
 - Set alerts for low cash balance
 ---
 
-
-## 🔍 Data Quality Checks
-
-| Check | Columns | Action |
-|-------|---------|--------|
-| **Null values** | `customer_id`, `order_id`, `transaction_id`, `amount` | Log warning, fill or drop |
-| **Duplicates** | All key columns | Identify & flag |
-| **Date range** | `order_date`, `payment_date`, `event_timestamp` | Warn on future dates |
-| **Amount validation** | `total_vnd`, `amount_vnd` | Flag negatives (except bank transactions) |
-| **Referential integrity** | FK relationships | Log orphan records |
-
----
-
-## 🏆 Bonus Challenges
-
-- [ ] **Incremental Loading** — CDC để chỉ load dữ liệu mới/thay đổi
-- [ ] **Data Lineage** — tracking nguồn gốc dữ liệu và transformations
-- [ ] **Alerting** — Email/Slack khi phát hiện anomalies
-- [ ] **ML Integration** — Customer churn prediction
-- [ ] **Real-time Dashboard** — Streaming với Pub/Sub + Dataflow
 
 ---
 
