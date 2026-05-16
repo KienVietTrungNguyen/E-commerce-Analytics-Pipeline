@@ -329,7 +329,6 @@ pytest tests/ --cov=. --cov-report=html
 
 ### Dashboard 1 — Customer Journey Analytics
 
-```
 <img width="1266" height="711" alt="image" src="https://github.com/user-attachments/assets/0561a168-b6df-420b-88b9-7ced65b9cbee" />
 
 ### Insights
@@ -348,7 +347,7 @@ pytest tests/ --cov=. --cov-report=html
 
 ### Dashboard 2 — Cashflow & Financial Analytics
 
-```
+
 <img width="1257" height="708" alt="image" src="https://github.com/user-attachments/assets/ca6b072e-5ec4-4d65-9556-a07c1dd97e8b" />
 
 ### Insights
