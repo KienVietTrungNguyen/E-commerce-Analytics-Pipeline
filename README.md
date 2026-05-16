@@ -4,14 +4,14 @@
 
 ## 📋 Table of Contents
 
-- [Overview](#-overview)
-- [Architecture](#-architecture)
-- [ETL Pipeline](#-etl-pipeline)
-- [Data Sources](#-data-sources)
-- [BigQuery Schema](#-bigquery-schema)
-- [Power BI Dashboards](#-power-bi-dashboards)
-- [Project Structure](#-project-structure)
-- [Setup & Installation](#-setup--installation)
+- [🎯 Overview](#-overview)
+- [🏗 Architecture](#-architecture)
+- [⚙️ ETL Pipeline](#️-etl-pipeline)
+- [📊 Data Sources](#-data-sources)
+- [🗄 BigQuery Schema](#-bigquery-schema)
+- [📊 Power BI Dashboards](#-power-bi-dashboards)
+- [⚙️ Setup & Installation](#️-setup--installation)
+- [📚 Resources](#-resources)
 
 
 ---
@@ -377,4 +377,3 @@ pytest tests/ --cov=. --cov-report=html
 
 ---
 
-*Good luck! 🎉*
